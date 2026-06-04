@@ -1,0 +1,91 @@
+/**
+ * @file src/assets/styles/modal-extras.css
+ * 给 BaseModal 内 v-html 渲染的内容使用的样式。
+ * 因为 v-html 内容不带 scoped 属性,必须用全局类。
+ *
+ * 也包含三种"按钮颜色类":BaseModal 的 modal-action-btn 通过
+ * className 拼接到对应的 btn-primary/secondary/danger。
+ */
+
+/* ============================================================
+   模态框 footer 按钮的三种颜色
+   ============================================================ */
+.modal-action-btn.btn-primary {
+    background: var(--accent);
+    color: #fff;
+    border: 1px solid var(--accent);
+}
+.modal-action-btn.btn-primary:hover {
+    background: var(--accent-hover);
+    border-color: var(--accent-hover);
+}
+
+.modal-action-btn.btn-secondary {
+    background: var(--bg-subtle);
+    color: var(--text-primary);
+    border: 1px solid var(--border);
+}
+.modal-action-btn.btn-secondary:hover {
+    background: var(--bg-hover);
+}
+
+.modal-action-btn.btn-danger {
+    background: var(--danger-subtle);
+    color: var(--danger);
+    border: 1px solid color-mix(in srgb, var(--danger) 20%, transparent);
+}
+.modal-action-btn.btn-danger:hover {
+    background: color-mix(in srgb, var(--danger) 15%, transparent);
+}
+
+/* ============================================================
+   侧边栏菜单弹出的输入框 / 文本域 / 提示文本
+   ============================================================ */
+.sidebar-modal-input,
+.sidebar-modal-textarea {
+    width: 100%;
+    background: var(--bg-subtle);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    padding: var(--space-2) var(--space-3);
+    font-family: inherit;
+    font-size: 14px;
+    color: var(--text-primary);
+    outline: none;
+    transition: border var(--transition-fast),
+                box-shadow var(--transition-fast);
+    resize: none;
+}
+.sidebar-modal-textarea {
+    min-height: 100px;
+    line-height: 1.6;
+}
+.sidebar-modal-input:focus,
+.sidebar-modal-textarea:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 15%, transparent);
+}
+
+.sidebar-modal-label {
+    display: block;
+    font-size: 13px;
+    color: var(--text-secondary);
+    margin-bottom: 6px;
+}
+
+.sidebar-modal-hint {
+    color: var(--text-secondary);
+    font-size: 14px;
+    margin: 0;
+    line-height: 1.6;
+}
+
+/* select 形态的 sidebar-modal-input(用作"移动到")需要自定义箭头 */
+select.sidebar-modal-input {
+    appearance: none;
+    -webkit-appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+    padding-right: 32px;
+}

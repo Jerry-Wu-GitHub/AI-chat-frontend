@@ -1,0 +1,251 @@
+/**
+ * @file src/assets/styles/markdown.css
+ * Markdown 正文样式。
+ *
+ * 这里的所有规则都作用于 .md-body 容器及其子元素。
+ * 由于 Markdown 内容通过 innerHTML 注入,无法用 scoped 样式,
+ * 必须放全局。同时 v-html 注入的元素也不带 [data-v-xxx],
+ * 所以即便组件想用 scoped 也覆盖不到。
+ */
+
+.md-body {
+    line-height: 1.75;
+    color: var(--ai-bubble-text);
+    word-break: break-word;
+}
+
+.md-body p { margin: 0 0 0.75em; }
+.md-body p:last-child { margin-bottom: 0; }
+
+.md-body h1, .md-body h2, .md-body h3,
+.md-body h4, .md-body h5, .md-body h6 {
+    font-weight: 600;
+    line-height: 1.35;
+    margin: 1.2em 0 0.5em;
+    color: var(--text-primary);
+}
+.md-body h1 { font-size: 1.35em; }
+.md-body h2 { font-size: 1.20em; }
+.md-body h3 { font-size: 1.10em; }
+
+.md-body ul, .md-body ol {
+    margin: 0.5em 0 0.75em 1.4em;
+    padding: 0;
+}
+.md-body li     { margin: 0.3em 0; }
+.md-body li > p { margin: 0; }
+
+.md-body blockquote {
+    margin: 0.75em 0;
+    padding: 0.4em 1em;
+    border-left: 3px solid var(--accent);
+    color: var(--text-secondary);
+    background: var(--accent-subtle);
+    border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+}
+
+.md-body hr {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 1em 0;
+}
+
+.md-body a {
+    color: var(--accent-text);
+    text-decoration: none;
+}
+.md-body a:hover { text-decoration: underline; }
+
+.md-body strong { font-weight: 600; color: var(--text-primary); }
+.md-body em     { font-style: italic; }
+
+/* ============================================================
+   行内代码
+   ============================================================ */
+.md-body code:not(.hljs) {
+    font-family: var(--font-mono);
+    font-size: 0.875em;
+    background: var(--code-bg);
+    border-radius: var(--radius-sm);
+    padding: 0.15em 0.4em;
+    color: var(--text-primary);
+}
+
+/* ============================================================
+   代码块
+   ============================================================ */
+.code-block-wrap {
+    margin: 0.8em 0;
+    position: relative;
+    overflow: visible;
+}
+
+.code-block-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--code-header-bg);
+    padding: 6px 12px;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    border-radius: var(--radius-md) var(--radius-md) 0 0;
+}
+
+.code-lang {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--text-muted);
+}
+
+.code-block-actions {
+    display: flex;
+    gap: 4px;
+    align-items: center;
+}
+
+.btn-copy, .btn-download-code {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 8px;
+    border-radius: var(--radius-sm);
+    font-size: 12px;
+    font-family: inherit;
+    color: var(--text-secondary);
+    background: var(--bg-hover);
+    border: none;
+    cursor: pointer;
+    transition: background var(--transition-fast), color var(--transition-fast);
+}
+.btn-copy:hover, .btn-download-code:hover {
+    background: var(--bg-active);
+    color: var(--text-primary);
+}
+.btn-copy.copied { color: var(--success); }
+
+.code-block-wrap pre {
+    margin: 0;
+    padding: 14px 16px;
+    background: var(--code-bg);
+    overflow-x: auto;
+}
+
+.code-block-wrap pre code.hljs {
+    font-family: var(--font-mono);
+    font-size: 13.5px;
+    line-height: 1.65;
+    background: transparent;
+    padding: 0;
+}
+
+/* ============================================================
+   表格
+   ============================================================ */
+.md-body table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 0.75em 0;
+    font-size: 14px;
+}
+.md-body th, .md-body td {
+    padding: 7px 12px;
+    border: 1px solid var(--border);
+    text-align: left;
+}
+.md-body th {
+    background: var(--bg-subtle);
+    font-weight: 600;
+    color: var(--text-primary);
+}
+.md-body tr:nth-child(even) td {
+    background: var(--bg-elevated);
+}
+
+/* ============================================================
+   KaTeX
+   ============================================================ */
+.md-body .katex-display {
+    overflow-x: auto;
+    overflow-y: hidden;
+    margin: 0.75em 0;
+}
+.md-body .katex {
+    font-size: 1em;
+}
+
+/* ============================================================
+   Mermaid 双形态代码块
+   ============================================================ */
+.mermaid-block-wrap[data-view="image"] .mermaid-code-pane { display: none; }
+.mermaid-block-wrap[data-view="code"]  .mermaid-image-pane { display: none; }
+.mermaid-block-wrap[data-view="code"]  .btn-mermaid-tool   { display: none; }
+
+.btn-mermaid-tool,
+.btn-mermaid-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 24px;
+    padding: 0;
+    border: none;
+    cursor: pointer;
+    border-radius: var(--radius-sm);
+    color: var(--text-secondary);
+    background: var(--bg-hover);
+    transition: background var(--transition-fast), color var(--transition-fast);
+}
+.btn-mermaid-tool:hover,
+.btn-mermaid-toggle:hover {
+    background: var(--bg-active);
+    color: var(--text-primary);
+}
+
+.mermaid-image-pane {
+    position: relative;
+    min-height: 280px;
+    max-height: 76vh;
+    background: var(--code-bg);
+    overflow: hidden;
+    border-radius: 0 0 var(--radius-md) var(--radius-md);
+    cursor: grab;
+    user-select: none;
+    touch-action: none;
+}
+.mermaid-image-pane.dragging { cursor: grabbing; }
+
+.mermaid-canvas {
+    width: max-content;
+    max-width: none;
+    margin: 0 auto;
+    padding: 18px;
+    transform-origin: top left;
+    transition: transform var(--transition-fast);
+}
+.mermaid-image-pane.dragging .mermaid-canvas {
+    transition: none;
+}
+.mermaid-canvas svg {
+    display: block;
+    max-width: none;
+    height: auto;
+}
+
+.mermaid-loading, .mermaid-error {
+    padding: 32px 18px;
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 13px;
+}
+.mermaid-error {
+    color: var(--danger);
+}
+
+.mermaid-code-pane {
+    margin: 0;
+    padding: 14px 16px;
+    background: var(--code-bg);
+    overflow-x: auto;
+    border-radius: 0 0 var(--radius-md) var(--radius-md);
+}

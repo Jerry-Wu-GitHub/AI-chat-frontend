@@ -1,0 +1,268 @@
+/**
+ * @file src/assets/styles/message.css
+ * 消息行 / 气泡 / 思考块的全局样式。
+ *
+ * 消息行内的某些子元素(代码块的复制按钮 + Markdown 注入的内容)
+ * 也是 v-html 渲染,所以这里整体不走 scoped。
+ */
+
+/* ============================================================
+   消息行 / 限宽
+   ============================================================ */
+.message-row {
+    position: relative;
+    width: 100%;
+    padding: 6px 0;
+}
+
+.message-wrapper {
+    max-width: 780px;
+    margin: 0 auto;
+    padding: 0 var(--space-5);
+    width: 100%;
+}
+
+/* 第一个消息行多留一些上边距,避免和工具栏过近 */
+.message-row:first-child {
+    margin-top: var(--space-6);
+}
+
+/* ============================================================
+   用户消息
+   ============================================================ */
+.msg-user {
+    display: flex;
+    justify-content: flex-end;
+}
+
+.msg-user .bubble {
+    background: var(--user-bubble-bg);
+    color: var(--user-bubble-text);
+    border-radius: var(--radius-xl) var(--radius-xl) var(--radius-sm) var(--radius-xl);
+    padding: 10px 16px;
+    max-width: min(480px, 80%);
+    font-size: 15px;
+    line-height: 1.65;
+    word-break: break-word;
+    white-space: pre-wrap;
+    box-shadow: var(--shadow-sm);
+}
+
+/* ============================================================
+   AI 消息
+   ============================================================ */
+.msg-ai {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-3);
+}
+
+.msg-ai .ai-avatar {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--accent), #a855f7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    margin-top: 2px;
+    font-size: 12px;
+    color: #fff;
+    font-weight: 700;
+}
+
+.msg-ai .ai-content {
+    flex: 1;
+    min-width: 0;
+    color: var(--ai-bubble-text);
+    font-size: 15px;
+    line-height: 1.75;
+    overflow: visible;
+}
+
+.msg-ai .ai-model-tag {
+    margin-top: 4px;
+    font-size: 12px;
+    color: var(--text-muted);
+    opacity: 0.7;
+}
+
+/* ============================================================
+   流式光标
+   ============================================================ */
+.streaming-cursor {
+    display: inline-block;
+    width: 2px;
+    height: 1em;
+    background: var(--accent);
+    border-radius: 1px;
+    margin-left: 2px;
+    vertical-align: text-bottom;
+    animation: pulse 1s ease infinite;
+}
+
+/* ============================================================
+   系统提示词消息
+   ============================================================ */
+.msg-system {
+    display: flex;
+    justify-content: center;
+}
+
+.msg-system .system-bubble {
+    position: relative;
+    width: min(620px, 86%);
+    max-width: min(620px, 86%);
+    padding: 10px 16px;
+    border-radius: var(--radius-lg);
+    background: linear-gradient(
+        135deg,
+        color-mix(in srgb, var(--accent) 11%, var(--bg-surface)),
+        color-mix(in srgb, var(--accent)  5%, var(--bg-subtle))
+    );
+    border: 1px dashed color-mix(in srgb, var(--accent) 52%, var(--border));
+    color: var(--text-primary);
+    font-size: 14.5px;
+    line-height: 1.7;
+    word-break: break-word;
+    white-space: pre-wrap;
+    box-shadow:
+        var(--shadow-sm),
+        inset 0 0 0 1px color-mix(in srgb, var(--accent) 6%, transparent);
+}
+
+/* ---- 继承的系统提示词(更弱) ---- */
+.message-row-inherited-system { padding: 4px 0; }
+.message-row-inherited-system:first-child { margin-top: var(--space-4); }
+
+.msg-system-inherited .system-bubble-inherited {
+    background: linear-gradient(
+        135deg,
+        color-mix(in srgb, var(--accent) 4%, var(--bg-surface)),
+        color-mix(in srgb, var(--accent) 2%, var(--bg-base))
+    );
+    border-color: color-mix(in srgb, var(--accent) 18%, var(--border));
+    color: color-mix(in srgb, var(--text-primary) 82%, var(--text-secondary));
+    box-shadow: none;
+    opacity: 0.92;
+}
+
+/* ============================================================
+   消息操作按钮(复制 / 编辑 / 删除 等)
+   ============================================================ */
+.message-row .msg-actions {
+    opacity: 0;
+    transition: opacity var(--transition-fast);
+}
+.message-row:hover .msg-actions {
+    opacity: 1;
+}
+
+.msg-actions {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    margin-top: 4px;
+}
+
+.msg-user-actions   { justify-content: flex-end; }
+.msg-system-actions { justify-content: center;   }
+.msg-inherited-system-actions {
+    justify-content: center;
+    opacity: 0.55;
+}
+.message-row-inherited-system:hover .msg-inherited-system-actions {
+    opacity: 0.85;
+}
+
+.msg-action-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 8px;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    font-family: inherit;
+    border-radius: var(--radius-sm);
+    font-size: 12px;
+    color: var(--text-muted);
+    transition: background var(--transition-fast), color var(--transition-fast);
+}
+.msg-action-btn:hover {
+    background: var(--bg-hover);
+    color: var(--text-primary);
+}
+.msg-action-btn.copied { color: var(--accent); }
+.msg-action-btn.danger:hover {
+    background: var(--danger-subtle);
+    color: var(--danger);
+}
+
+/* ============================================================
+   思考折叠块
+   ============================================================ */
+.thinking-block {
+    background: var(--thinking-bg);
+    border: 1px solid var(--thinking-border);
+    border-radius: var(--radius-md);
+    margin-bottom: var(--space-3);
+    overflow: hidden;
+}
+
+.thinking-header {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding: 8px 12px;
+    cursor: pointer;
+    font-size: 13px;
+    color: color-mix(in srgb, var(--accent) 78%, var(--text-secondary));
+    font-weight: 500;
+    user-select: none;
+    transition: background var(--transition-fast);
+}
+.thinking-header:hover {
+    background: color-mix(in srgb, var(--accent) 8%, transparent);
+}
+
+.thinking-chevron {
+    transition: transform var(--transition-base);
+    flex-shrink: 0;
+}
+.thinking-block.open .thinking-chevron {
+    transform: rotate(180deg);
+}
+
+.thinking-body {
+    padding: 0 12px;
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height var(--transition-slow) ease,
+                padding   var(--transition-slow);
+    font-size: 13.5px;
+    color: var(--text-secondary);
+    line-height: 1.7;
+}
+.thinking-block.open .thinking-body {
+    max-height: 2000px;
+    padding: 8px 12px 12px;
+    overflow: auto;
+}
+
+/* 流式期间用纯文本占位时,保留换行 */
+.thinking-body.streaming-plain,
+.thinking-body .md-body.streaming-plain {
+    white-space: pre-wrap;
+}
+
+.thinking-body .md-body {
+    font-size: 13.5px;
+    color: var(--text-secondary);
+}
+.thinking-body .md-body h1,
+.thinking-body .md-body h2,
+.thinking-body .md-body h3 {
+    font-size: 1.05em;
+}

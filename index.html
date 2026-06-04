@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="system" data-resolved-theme="light">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="color-scheme" content="light dark" />
+    <title>AI Chat</title>
+
+    <!--
+        highlight.js 的两套主题样式。
+        通过禁用其中一份来切换浅色 / 深色配色,所以这里都加 id。
+        实际切换逻辑在 composables/useTheme.js 中,通过 link.disabled 完成。
+    -->
+    <link
+        id="hljs-light-theme"
+        rel="stylesheet"
+        href="https://cdn.jsdelivr.net/npm/highlight.js@11.9.0/styles/atom-one-light.min.css"
+    />
+    <link
+        id="hljs-dark-theme"
+        rel="stylesheet"
+        href="https://cdn.jsdelivr.net/npm/highlight.js@11.9.0/styles/atom-one-dark.min.css"
+        disabled
+    />
+
+    <!-- KaTeX 的样式表(数学公式渲染) -->
+    <link
+        rel="stylesheet"
+        href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css"
+    />
+</head>
+<body>
+    <!-- Vue 应用挂载点 -->
+    <div id="app"></div>
+
+    <!-- 入口脚本 -->
+    <script type="module" src="/src/main.js"></script>
+</body>
+</html>
