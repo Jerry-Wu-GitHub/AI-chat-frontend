@@ -10,12 +10,16 @@
  *
  * 拖入文件:把附件追加到该消息的 files。useDragDrop 在编辑框上单独绑,
  * stopPropagation 阻止冒泡到 ChatArea(避免文件被加进底部 pendingFiles)。
+ *
+ * 上传中的占位 chip 维护在本组件的 uploadingFiles 中(不写入 store),
+ * 上传成功后再追加到消息的 files。
  */
 
-import { ref, computed } from 'vue';
+import { ref, computed, onBeforeUnmount } from 'vue';
 
 import BaseButton   from '@/components/common/BaseButton.vue';
 import BaseTextarea from '@/components/common/BaseTextarea.vue';
+import BaseIcon     from '@/components/common/BaseIcon.vue';
 
 import { useSessionsStore } from '@/stores/sessions.js';
 import { useDragDrop }      from '@/composables/useDragDrop.js';
@@ -29,9 +33,9 @@ const props = defineProps({
 
 const emit = defineEmits(['done']);
 
-const sessionsStore     = useSessionsStore();
-const { uploadMany }    = useFileUpload();
-const chatStore         = useChatStore();
+const sessionsStore = useSessionsStore();
+const { uploadOne } = useFileUpload();
+const chatStore     = useChatStore();
 
 const editedText = ref(props.message.content || '');
 
@@ -39,33 +43,59 @@ const editedText = ref(props.message.content || '');
 const wrapRef = ref(null);
 
 /**
- * 拖放接收:把上传成功的文件追加到本条消息的 files 中。
+ * 本组件维护的"上传中"占位列表(不写入 store)。
+ * 每项形如 { id, name, size }。
+ *
+ * @type {import('vue').Ref<Array<{ id: string, name: string, size: number }>>}
+ */
+const uploadingFiles = ref([]);
+
+/**
+ * 当前消息上的真实附件。
+ */
+const currentFiles = computed(() => {
+    const session = sessionsStore.findSessionById(props.sessionId);
+    return session?.messages.find(item => item.id === props.message.id)?.files || [];
+});
+
+/**
+ * 拖放接收:为每个文件先插入占位 chip,上传完成后追加到 store。
  *
  * @param {File[]} files
  * @returns {Promise<void>}
  */
 async function onFilesDropped(files) {
-    const results = await uploadMany(files);
-    const successful = results.filter(item => item !== null);
-    if (successful.length === 0) return;
+    const tasks = files.map(async (file) => {
+        const placeholderId = `placeholder-${crypto.randomUUID()}`;
+        uploadingFiles.value = [
+            ...uploadingFiles.value,
+            { id: placeholderId, name: file.name, size: file.size },
+        ];
 
-    const session = sessionsStore.findSessionById(props.sessionId);
-    const current = session?.messages.find(item => item.id === props.message.id);
-    const existingFiles = current?.files || [];
-    sessionsStore.updateMessage(props.sessionId, props.message.id, {
-        files: [...existingFiles, ...successful],
+        const fileRef = await uploadOne(file);
+
+        // 移除占位
+        uploadingFiles.value = uploadingFiles.value.filter(
+            item => item.id !== placeholderId,
+        );
+
+        // 成功则追加到消息的 files
+        if (fileRef) {
+            const session = sessionsStore.findSessionById(props.sessionId);
+            const current = session?.messages.find(item => item.id === props.message.id);
+            const existingFiles = current?.files || [];
+            sessionsStore.updateMessage(props.sessionId, props.message.id, {
+                files: [...existingFiles, fileRef],
+            });
+        }
     });
+
+    await Promise.all(tasks);
 }
 
 const { isDragActive } = useDragDrop(wrapRef, {
     onDropFiles: onFilesDropped,
     stopPropagation: true,
-});
-
-/** 当前消息上的附件(用于在编辑态下展示)。 */
-const currentFiles = computed(() => {
-    const session = sessionsStore.findSessionById(props.sessionId);
-    return session?.messages.find(item => item.id === props.message.id)?.files || [];
 });
 
 /**
@@ -98,6 +128,11 @@ async function onSaveAndResend() {
     emit('done');
     chatStore.requestStream(props.sessionId);
 }
+
+onBeforeUnmount(() => {
+    // 组件卸载时清空占位(实际文件已经在 onFilesDropped 内追加到 store)
+    uploadingFiles.value = [];
+});
 </script>
 
 <template>
@@ -106,12 +141,24 @@ async function onSaveAndResend() {
         class="user-edit-wrap"
         :class="{ 'drop-active': isDragActive }"
     >
-        <div v-if="currentFiles.length > 0" class="user-edit-files">
+        <div
+            v-if="currentFiles.length > 0 || uploadingFiles.length > 0"
+            class="user-edit-files"
+        >
             <span
                 v-for="file in currentFiles"
                 :key="file.url"
-                class="user-edit-file-name"
+                class="user-edit-file-chip"
             >{{ file.name }}</span>
+
+            <span
+                v-for="file in uploadingFiles"
+                :key="file.id"
+                class="user-edit-file-chip user-edit-file-chip--uploading"
+            >
+                <BaseIcon name="spinner" :size="12" spinning />
+                {{ file.name }} 上传中…
+            </span>
         </div>
 
         <BaseTextarea
@@ -156,12 +203,20 @@ async function onSaveAndResend() {
     justify-content: flex-end;
 }
 
-.user-edit-file-name {
+.user-edit-file-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
     font-size: 12px;
     padding: 2px 8px;
     border-radius: 99px;
     background: var(--bg-subtle);
     color: var(--text-secondary);
+}
+
+.user-edit-file-chip--uploading {
+    background: color-mix(in srgb, var(--accent) 12%, var(--bg-subtle));
+    color: var(--accent-text);
 }
 
 .user-edit-textarea {
