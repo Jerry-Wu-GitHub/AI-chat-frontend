@@ -125,3 +125,79 @@ const OFFICE_MEDIA_TYPES = new Set([
     'application/msword',
     'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
 ]);
+
+
+/**
+ * 用 HEAD 请求探测一个 URL 的元信息(Content-Type、Content-Length、
+ * Content-Disposition 中的 filename)。
+ *
+ * 带 2.5 秒超时:超时或网络失败时 resolve 一个空对象(由调用方决定回退)。
+ *
+ * @param {string} url
+ * @param {object} [options]
+ * @param {number} [options.timeoutMs=2500]
+ * @returns {Promise<{ mediaType: string, size: number, filename: string }>}
+ */
+export async function probeResourceMetadata(url, options = {}) {
+    const timeoutMs = options.timeoutMs ?? 2500;
+    const result = { mediaType: '', size: 0, filename: '' };
+
+    /** @type {AbortController} */
+    const abortController = new AbortController();
+    const timeoutId = setTimeout(() => abortController.abort(), timeoutMs);
+
+    try {
+        const response = await fetch(url, {
+            method: 'HEAD',
+            signal: abortController.signal,
+            // 不带 credentials,避免不必要的 CORS preflight 复杂度。
+        });
+        if (!response.ok) return result;
+
+        const contentType = response.headers.get('Content-Type') || '';
+        // Content-Type 可能形如 "application/pdf; charset=utf-8",取分号前部分。
+        result.mediaType = contentType.split(';')[0].trim().toLowerCase();
+
+        const contentLength = response.headers.get('Content-Length');
+        if (contentLength) {
+            const parsed = parseInt(contentLength, 10);
+            if (Number.isFinite(parsed) && parsed >= 0) result.size = parsed;
+        }
+
+        // 解析 Content-Disposition: attachment; filename="xxx.pdf"
+        // 或 RFC 5987 形式 filename*=UTF-8''...
+        const disposition = response.headers.get('Content-Disposition') || '';
+        const utf8Match  = disposition.match(/filename\*\s*=\s*UTF-8''([^;]+)/i);
+        const plainMatch = disposition.match(/filename\s*=\s*"?([^";]+)"?/i);
+        if (utf8Match) {
+            try { result.filename = decodeURIComponent(utf8Match[1]); } catch {}
+        } else if (plainMatch) {
+            result.filename = plainMatch[1].trim();
+        }
+    } catch {
+        // 超时 / 网络错误 / CORS 阻塞 → 返回空 result,调用方走回退。
+    } finally {
+        clearTimeout(timeoutId);
+    }
+
+    return result;
+}
+
+
+/**
+ * 从 URL 中提取最后一段路径作为文件名(去掉 query 和 hash)。
+ *
+ * @param {string} url
+ * @returns {string} 推断出的文件名,失败时返回空串
+ */
+export function guessFilenameFromUrl(url) {
+    try {
+        const absolute = new URL(url, window.location.href);
+        const pathname = absolute.pathname;
+        const lastSlash = pathname.lastIndexOf('/');
+        const tail = lastSlash >= 0 ? pathname.slice(lastSlash + 1) : pathname;
+        return decodeURIComponent(tail || '');
+    } catch {
+        return '';
+    }
+}

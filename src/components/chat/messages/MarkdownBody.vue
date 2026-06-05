@@ -20,7 +20,12 @@ import { useToast }      from '@/composables/useToast.js';
 
 import { renderMarkdownToHtml } from '@/utils/markdown.js';
 import { languageToExtension, buildCodeBlockBaseFilename } from '@/utils/lang-ext.js';
-import { downloadBlob }         from '@/utils/format.js';
+import { usePreviewStore } from '@/stores/preview.js';
+import {
+    classifyPreviewKind,
+    probeResourceMetadata,
+    guessFilenameFromUrl,
+} from '@/utils/format.js';
 import {
     serializeMermaidSvg,
     svgStringToPngBlob,
@@ -53,6 +58,7 @@ const props = defineProps({
 
 const { showToast }     = useToast();
 const { renderMath, renderMermaid } = useMarkdown();
+const previewStore = usePreviewStore();
 
 /** @type {import('vue').Ref<HTMLElement | null>} */
 const containerRef = ref(null);
@@ -137,6 +143,11 @@ defineExpose({
 function onContainerClick(event) {
     const target = event.target;
     if (!(target instanceof Element)) return;
+
+    const anchor = target.closest('a[href]');
+    if (anchor && !target.closest('.code-block-wrap')) {
+        if (handleLinkClick(anchor, event)) return;
+    }
 
     // 复制代码块
     const copyButton = target.closest('.btn-copy');
@@ -495,6 +506,87 @@ function onContainerPointerUp(event) {
     dragState.wrap = null;
     dragState.pane = null;
 }
+
+
+/**
+ * 处理消息正文中的链接点击。
+ *
+ * 因为没法从 URL 字符串可靠地判断文件类型,这里**总是先拦截默认跳转**,
+ * 然后用 HEAD 请求查询真实 Content-Type:
+ *   - 如果是可预览类型(图片 / PDF / Office / 文本) → 打开预览面板。
+ *   - 否则用 window.open 在新标签页打开原 URL。
+ *
+ * 修饰键(Ctrl/Cmd/Shift/Alt/中键)按下时不拦截,尊重用户"新标签页"
+ * 等默认行为。
+ *
+ * 注意 HEAD 请求有可能因为 CORS 被浏览器拦截。当 HEAD 失败时,
+ * 一律视为"不能预览",直接 window.open。
+ *
+ * @param {HTMLAnchorElement} anchor
+ * @param {MouseEvent} event
+ * @returns {boolean} true 表示已接管,调用方应中止后续分发
+ */
+function handleLinkClick(anchor, event) {
+    if (event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) {
+        return false;
+    }
+    if (event.button !== 0) return false;
+
+    const href = anchor.getAttribute('href');
+    if (!href) return false;
+    if (href.startsWith('#')) return false;
+
+    /** @type {URL} */
+    let absoluteUrl;
+    try {
+        absoluteUrl = new URL(href, window.location.href);
+    } catch {
+        return false;
+    }
+    if (absoluteUrl.protocol !== 'http:' && absoluteUrl.protocol !== 'https:') {
+        return false;
+    }
+
+    // 先一律拦截,异步探测后再决定预览或跳转。
+    event.preventDefault();
+    decideAndOpenLink(absoluteUrl.toString(), anchor);
+    return true;
+}
+
+/**
+ * 异步:HEAD 探测 → 可预览则进面板,否则新标签页打开。
+ *
+ * @param {string} url
+ * @param {HTMLAnchorElement} anchor 原链接元素(用其 textContent 做回退文件名)
+ * @returns {Promise<void>}
+ */
+async function decideAndOpenLink(url, anchor) {
+    /** @type {{ mediaType: string, size: number, filename: string }} */
+    const meta = await probeResourceMetadata(url);
+
+    const previewKind = classifyPreviewKind(meta.mediaType);
+
+    if (previewKind) {
+        const filename =
+            meta.filename
+            || guessFilenameFromUrl(url)
+            || anchor.textContent.trim()
+            || '文件';
+
+        previewStore.openPreview({
+            name: filename,
+            size: meta.size,
+            mediaType: meta.mediaType,
+            url,
+            isImage: meta.mediaType.startsWith('image/'),
+        });
+        return;
+    }
+
+    // 不可预览或探测失败 → 在新标签页打开,不在当前页跳走。
+    window.open(url, '_blank', 'noopener,noreferrer');
+}
+
 
 onBeforeUnmount(() => {
     if (dragState.pane) {
