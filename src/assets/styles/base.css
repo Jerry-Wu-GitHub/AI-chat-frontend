@@ -64,3 +64,26 @@ a {
     from { opacity: 0; transform: translateY(12px); }
     to   { opacity: 1; transform: translateY(0); }
 }
+
+
+/* ============================================================
+   .base-icon 全局样式
+   BaseIcon.vue 也有同名样式(scoped),但是 innerHTML 注入的图标
+   (例如 Mermaid 工具栏)不带 scoped 属性,必须用全局规则匹配。
+   ============================================================ */
+.base-icon {
+    display: inline-block;
+    flex-shrink: 0;
+    width: 1em;
+    height: 1em;
+    background-color: currentColor;
+    -webkit-mask-image: var(--icon-url);
+            mask-image: var(--icon-url);
+    -webkit-mask-repeat: no-repeat;
+            mask-repeat: no-repeat;
+    -webkit-mask-position: center;
+            mask-position: center;
+    -webkit-mask-size: contain;
+            mask-size: contain;
+    vertical-align: middle;
+}

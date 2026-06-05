@@ -20,6 +20,30 @@ import hljs from 'highlight.js';
 import { escapeHtml, escapeAttribute } from './escape.js';
 import { isMermaidLanguage } from './lang-ext.js';
 
+
+/**
+ * 构造一个跟 BaseIcon 渲染结果一致的 SVG 占位 span 字符串。
+ * 用于在 innerHTML 字符串里嵌入图标(BaseIcon 是 Vue 组件,无法直接在
+ * innerHTML 里用)。
+ *
+ * 与 BaseIcon.vue 的 DOM 输出保持一致:
+ *   - class .base-icon(全局 CSS 已有 mask 相关样式)
+ *   - 通过 --icon-url CSS 变量指定 SVG 路径
+ *
+ * @param {string} iconName public/svg/icon/<iconName>.svg
+ * @param {number} [sizePx=12]
+ * @returns {string}
+ */
+function buildIconHtml(iconName, sizePx = 12) {
+    const safeName = escapeAttribute(iconName);
+    return (
+        `<span class="base-icon" aria-hidden="true" ` +
+        `style="--icon-url:url(/svg/icon/${safeName}.svg);` +
+        `width:${sizePx}px;height:${sizePx}px;"></span>`
+    );
+}
+
+
 /* ================================================================
    markdown-it 实例(懒初始化)
    ================================================================ */
@@ -149,10 +173,18 @@ function renderMermaidFenceHtml(rawCode, language, highlightedHtml, blockIndex, 
                 `<div class="code-block-actions">` +
                     `<button class="btn-copy" type="button">复制</button>` +
                     `<button class="btn-download-code" type="button">下载</button>` +
-                    `<button class="btn-mermaid-tool btn-mermaid-zoom-out" type="button" title="缩小"></button>` +
-                    `<button class="btn-mermaid-tool btn-mermaid-zoom-in" type="button" title="放大"></button>` +
-                    `<button class="btn-mermaid-tool btn-mermaid-fit" type="button" title="适应页面"></button>` +
-                    `<button class="btn-mermaid-toggle" type="button" title="代码 / 图片切换"></button>` +
+                    `<button class="btn-mermaid-tool btn-mermaid-zoom-out" type="button" title="缩小">` +
+                        `${buildIconHtml('zoom-out', 12)}` +
+                    `</button>` +
+                    `<button class="btn-mermaid-tool btn-mermaid-zoom-in" type="button" title="放大">` +
+                        `${buildIconHtml('zoom-in', 12)}` +
+                    `</button>` +
+                    `<button class="btn-mermaid-tool btn-mermaid-fit" type="button" title="适应页面">` +
+                        `${buildIconHtml('fit-page', 12)}` +
+                    `</button>` +
+                    `<button class="btn-mermaid-toggle" type="button" title="代码 / 图片切换">` +
+                        `${buildIconHtml('code-view', 12)}` +
+                    `</button>` +
                 `</div>` +
             `</div>` +
             `<div class="mermaid-image-pane">` +
@@ -164,6 +196,7 @@ function renderMermaidFenceHtml(rawCode, language, highlightedHtml, blockIndex, 
         `</div>\n`
     );
 }
+
 
 /* ================================================================
    预处理:保护代码块和公式
